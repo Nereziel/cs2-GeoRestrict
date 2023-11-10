@@ -1,4 +1,6 @@
 
 .vs/
-bin/
-obj/
+GeoRestrict/bin/
+GeoRestrict/obj/
+GeoRestrict-LocalDb/bin/
+GeoRestrict-LocalDb/obj/

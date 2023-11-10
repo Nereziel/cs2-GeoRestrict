@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeoRestrict", "GeoRestrict.csproj", "{B9269610-4E7D-4D89-8A9E-7DE3E40A36F9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeoRestrictLocalDb", "GeoRestrictLocalDb\GeoRestrictLocalDb.csproj", "{85549B97-23BA-4DF2-AF71-87FE5689C9EF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeoRestrict", "GeoRestrict\GeoRestrict.csproj", "{4A8E09B6-97BF-4DF2-B459-9658928137C9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B9269610-4E7D-4D89-8A9E-7DE3E40A36F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B9269610-4E7D-4D89-8A9E-7DE3E40A36F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B9269610-4E7D-4D89-8A9E-7DE3E40A36F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B9269610-4E7D-4D89-8A9E-7DE3E40A36F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85549B97-23BA-4DF2-AF71-87FE5689C9EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85549B97-23BA-4DF2-AF71-87FE5689C9EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85549B97-23BA-4DF2-AF71-87FE5689C9EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85549B97-23BA-4DF2-AF71-87FE5689C9EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A8E09B6-97BF-4DF2-B459-9658928137C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A8E09B6-97BF-4DF2-B459-9658928137C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A8E09B6-97BF-4DF2-B459-9658928137C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A8E09B6-97BF-4DF2-B459-9658928137C9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

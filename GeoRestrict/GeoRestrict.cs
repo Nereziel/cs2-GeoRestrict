@@ -1,7 +1,9 @@
 ﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using MaxMind.GeoIP2;
 using System.Text.Json;
+using Nexd.Rest;
+using Newtonsoft.Json;
+using System.Text.Json.Nodes;
 
 namespace GeoRestrict
 {
@@ -10,9 +12,9 @@ namespace GeoRestrict
         public override string ModuleName => "GeoRestrict";
         public override string ModuleAuthor => "Nereziel";
         public override string ModuleDescription => "Allows server owners to block/whitelist players from a country based on IP.";
-        public override string ModuleVersion => "1.0";
-
+        public override string ModuleVersion => "1.1";
         private Config cfg = null!;
+        private CountryIsAPI api = new();
         public override void Load(bool hotReload)
         {
             cfg = LoadConfig();
@@ -22,42 +24,26 @@ namespace GeoRestrict
         private void OnClientConnect(int playerSlot, string name, string ipAddress)
         {
             var ip = ipAddress.Split(":");
-            var country = CheckCountry(ip[0]);
+            var country = api.GetCountryFromIP(ip[0]);
             var countries = cfg.IsoCountries;
-            bool exists = countries!.Any(s => s.Contains(country));
-            
-            if(cfg.AllowFromUnknown && country == "UNKNOWN")
+            if (cfg.AllowFromUnknown && country == null)
             {
-                Log($"Player {name} has connected from {country}");
+                Log($"Player {name} has connected from Unknown");
                 return;
             }
+            bool exists = countries!.Any(s => s.Contains(country.Country));
             if (cfg.Whitelist && !exists)
             {
-                //TODO: kick reason not whitelisted country
-                Server.ExecuteCommand($"kickid {playerSlot}");
-                Log($"Player {name} ({country}) has been kicked because he not from Whitelisted country");
+                Server.ExecuteCommand($"kickid {playerSlot} \"{cfg.KickMessage}\"");
+                Log($"Player {name} ({country}) has been kicked because he is not from Whitelisted country");
             }
-            else if(!cfg.Whitelist && exists)
+            else if (!cfg.Whitelist && exists)
             {
-                //TODO: kick reason blacklisted country
-                Server.ExecuteCommand($"kickid {playerSlot}");
+                Server.ExecuteCommand($"kickid {playerSlot} \"{cfg.KickMessage}\"");
                 Log($"Player {name} ({country}) has been kicked because he is from Blacklisted country");
             }
         }
-        private string CheckCountry(string ipAddress)
-        {
-            var mmdDbFile = Path.Combine(ModuleDirectory, "GeoLite2-Country.mmdb");
-            using var reader = new DatabaseReader(mmdDbFile);
-            try
-            {
-                var country = reader.Country(ipAddress);
-                return country.Country.IsoCode!;
-            }
-            catch (Exception)
-            {
-                return "UNKOWN";
-            }
-        }
+
         private static void Log(string message)
         {
             Console.BackgroundColor = ConsoleColor.DarkGray;
@@ -72,7 +58,7 @@ namespace GeoRestrict
 
             if (!File.Exists(configPath)) return CreateConfig(configPath);
 
-            var config = JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath))!;
+            var config = System.Text.Json.JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath))!;
 
             return config;
         }
@@ -83,9 +69,10 @@ namespace GeoRestrict
                 IsoCountries = new List<string> { "CZ", "SK" },
                 Whitelist = true,
                 AllowFromUnknown = true,
+                KickMessage = "You are not allowed to play on this server from your country.",
             };
 
-            File.WriteAllText(configPath, JsonSerializer.Serialize(config));
+            File.WriteAllText(configPath, System.Text.Json.JsonSerializer.Serialize(config));
 
             return config;
         }
@@ -94,6 +81,40 @@ namespace GeoRestrict
             public List<string>? IsoCountries { get; set; }
             public bool Whitelist { get; set; }
             public bool AllowFromUnknown { get; set; }
+            public string KickMessage { get; set; }
+        }
+        internal class CountryData : IJsonObject
+        {
+            [JsonProperty("ip")]
+            public string IP;
+
+            [JsonProperty("country")]
+            public string Country;
+        }
+
+        internal class CountryIsAPI : HttpAPI
+        {
+            private static readonly string ApiURL = "https://api.country.is";
+
+            public CountryIsAPI() : base(ApiURL)
+            { }
+
+            public CountryData? GetCountryFromIP(string ip)
+            {
+                try
+                {
+                    return this.SendRequest<CountryData>($"/{ip}");
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            public async Task<CountryData?> GetCountryFromIPAsync(string ip)
+            {
+                return await this.SendRequestAsync<CountryData>($"/{ip}");
+            }
         }
     }
 }
