@@ -1,4 +1,6 @@
 # cs2-GeoRestrict
+GeoRestrict is Http based on https://api.country.is/
+GeoRestrictLocalDb is based on maxminds database file
 
 ## Description:
 - Allows CS2 server owners to block/whitelist players from a country based on IP
