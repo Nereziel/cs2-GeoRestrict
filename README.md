@@ -110,6 +110,10 @@ The separate `GeoRestrictLocalDb` plugin has been merged into `GeoRestrict`.
 4. Add `"Provider": "LocalDb"`.
 5. Move or download `GeoLite2-Country.mmdb` into the new `GeoRestrict` plugin directory.
 
+## Release package
+
+Each release contains a single `GeoRestrict.zip`. CounterStrikeSharp itself and `GeoLite2-Country.mmdb` are intentionally not bundled.
+
 ## Notes
 
 - HTTP lookups run asynchronously and do not block the game thread while waiting for the API.
