@@ -1,120 +1,155 @@
-﻿using CounterStrikeSharp.API;
-using CounterStrikeSharp.API.Core;
+using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
-using Nexd.Rest;
-using Newtonsoft.Json;
-using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Core;
+using GeoRestrict.Shared;
+using Microsoft.Extensions.Logging;
 
-namespace GeoRestrict
+namespace GeoRestrict;
+
+public sealed class GeoRestrict : BasePlugin
 {
-    public class GeoRestrict : BasePlugin
+    private static readonly JsonSerializerOptions ConfigJsonOptions = new()
     {
-        public override string ModuleName => "GeoRestrict";
-        public override string ModuleAuthor => "Nereziel";
-        public override string ModuleDescription => "Allows server owners to block/whitelist players from a country based on IP.";
-        public override string ModuleVersion => "1.1";
-        private Config cfg = null!;
-        private CountryIsAPI api = new();
-        public override void Load(bool hotReload)
+        WriteIndented = true
+    };
+
+    private readonly HttpClient _httpClient = new()
+    {
+        BaseAddress = new Uri("https://api.country.is/"),
+        Timeout = TimeSpan.FromSeconds(5)
+    };
+
+    private Config _config = new();
+
+    public override string ModuleName => "GeoRestrict";
+    public override string ModuleAuthor => "Nereziel";
+    public override string ModuleDescription => "Allows server owners to block/whitelist players from a country based on IP.";
+    public override string ModuleVersion => "2.0.0";
+
+    public override void Load(bool hotReload)
+    {
+        _config = LoadConfig();
+        RegisterListener<Listeners.OnClientConnect>(OnClientConnect);
+    }
+
+    public override void Unload(bool hotReload)
+    {
+        _httpClient.Dispose();
+    }
+
+    private void OnClientConnect(int playerSlot, string name, string ipAddress)
+    {
+        var address = GeoRestrictionPolicy.ParseIpAddress(ipAddress);
+        if (address is null)
         {
-            cfg = LoadConfig();
-            RegisterListener<Listeners.OnClientConnect>(OnClientConnect);
+            ApplyDecision(playerSlot, name, null, null);
+            return;
         }
 
-        private void OnClientConnect(int playerSlot, string name, string ipAddress)
+        _ = HandleClientConnectAsync(playerSlot, name, address);
+    }
+
+    private async Task HandleClientConnectAsync(int playerSlot, string name, IPAddress address)
+    {
+        string? countryCode = null;
+
+        try
         {
-            var ip = ipAddress.Split(":");
-            var country = api.GetCountryFromIP(ip[0]);
-            var countries = cfg.IsoCountries;
-            if (cfg.AllowFromUnknown && country == null)
+            var country = await _httpClient
+                .GetFromJsonAsync<CountryData>(Uri.EscapeDataString(address.ToString()))
+                .ConfigureAwait(false);
+
+            countryCode = country?.Country;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "Failed to resolve country for {IpAddress}", address);
+        }
+
+        ApplyDecision(playerSlot, name, address, countryCode);
+    }
+
+    private void ApplyDecision(int playerSlot, string name, IPAddress? expectedAddress, string? countryCode)
+    {
+        var allowed = GeoRestrictionPolicy.IsAllowed(
+            countryCode,
+            _config.IsoCountries,
+            _config.Whitelist,
+            _config.AllowFromUnknown);
+
+        if (allowed)
+        {
+            Logger.LogInformation(
+                "Player {PlayerName} connected from {CountryCode}",
+                name,
+                countryCode ?? "UNKNOWN");
+            return;
+        }
+
+        Server.NextFrame(() =>
+        {
+            if (expectedAddress is not null)
             {
-                Log($"Player {name} has connected from Unknown");
-                return;
-            }
-            bool exists = countries!.Any(s => s.Contains(country.Country));
-            if (cfg.Whitelist && !exists)
-            {
-                Server.ExecuteCommand($"kickid {playerSlot} \"{cfg.KickMessage}\"");
-                Log($"Player {name} ({country}) has been kicked because he is not from Whitelisted country");
-            }
-            else if (!cfg.Whitelist && exists)
-            {
-                Server.ExecuteCommand($"kickid {playerSlot} \"{cfg.KickMessage}\"");
-                Log($"Player {name} ({country}) has been kicked because he is from Blacklisted country");
-            }
-        }
+                var player = Utilities.GetPlayerFromSlot(playerSlot);
+                var currentAddress = GeoRestrictionPolicy.ParseIpAddress(player?.IpAddress);
 
-        private static void Log(string message)
-        {
-            Console.BackgroundColor = ConsoleColor.DarkGray;
-            Console.ForegroundColor = ConsoleColor.DarkMagenta;
-            Console.WriteLine(message);
-            Console.ResetColor();
-        }
-
-        private Config LoadConfig()
-        {
-            var configPath = Path.Combine(ModuleDirectory, "GeoRestrict.json");
-
-            if (!File.Exists(configPath)) return CreateConfig(configPath);
-
-            var config = System.Text.Json.JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath))!;
-
-            return config;
-        }
-        private static Config CreateConfig(string configPath)
-        {
-            var config = new Config
-            {
-                IsoCountries = new List<string> { "CZ", "SK" },
-                Whitelist = true,
-                AllowFromUnknown = true,
-                KickMessage = "You are not allowed to play on this server from your country.",
-            };
-
-            File.WriteAllText(configPath, System.Text.Json.JsonSerializer.Serialize(config));
-
-            return config;
-        }
-        internal class Config
-        {
-            public List<string>? IsoCountries { get; set; }
-            public bool Whitelist { get; set; }
-            public bool AllowFromUnknown { get; set; }
-            public string KickMessage { get; set; }
-        }
-        internal class CountryData : IJsonObject
-        {
-            [JsonProperty("ip")]
-            public string IP;
-
-            [JsonProperty("country")]
-            public string Country;
-        }
-
-        internal class CountryIsAPI : HttpAPI
-        {
-            private static readonly string ApiURL = "https://api.country.is";
-
-            public CountryIsAPI() : base(ApiURL)
-            { }
-
-            public CountryData? GetCountryFromIP(string ip)
-            {
-                try
+                if (player is null || !player.IsValid || currentAddress is null || !currentAddress.Equals(expectedAddress))
                 {
-                    return this.SendRequest<CountryData>($"/{ip}");
-                }
-                catch
-                {
-                    return null;
+                    return;
                 }
             }
 
-            public async Task<CountryData?> GetCountryFromIPAsync(string ip)
-            {
-                return await this.SendRequestAsync<CountryData>($"/{ip}");
-            }
+            var kickMessage = GeoRestrictionPolicy.SanitizeKickMessage(_config.KickMessage);
+            Server.ExecuteCommand($"kickid {playerSlot} \"{kickMessage}\"");
+
+            Logger.LogInformation(
+                "Player {PlayerName} ({CountryCode}) was kicked by GeoRestrict policy",
+                name,
+                countryCode ?? "UNKNOWN");
+        });
+    }
+
+    private Config LoadConfig()
+    {
+        var configPath = Path.Combine(ModuleDirectory, "GeoRestrict.json");
+
+        if (!File.Exists(configPath))
+        {
+            return CreateConfig(configPath);
         }
+
+        try
+        {
+            return JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath), ConfigJsonOptions) ?? new Config();
+        }
+        catch (JsonException exception)
+        {
+            Logger.LogError(exception, "GeoRestrict configuration is invalid; using defaults");
+            return new Config();
+        }
+    }
+
+    private static Config CreateConfig(string configPath)
+    {
+        var config = new Config();
+        File.WriteAllText(configPath, JsonSerializer.Serialize(config, ConfigJsonOptions));
+        return config;
+    }
+
+    internal sealed class Config
+    {
+        public List<string> IsoCountries { get; set; } = ["CZ", "SK"];
+        public bool Whitelist { get; set; } = true;
+        public bool AllowFromUnknown { get; set; } = true;
+        public string KickMessage { get; set; } = "You are not allowed to play on this server from your country.";
+    }
+
+    private sealed class CountryData
+    {
+        [JsonPropertyName("country")]
+        public string? Country { get; init; }
     }
 }
