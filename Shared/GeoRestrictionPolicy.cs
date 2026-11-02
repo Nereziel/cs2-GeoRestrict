@@ -12,8 +12,8 @@ public static class GeoRestrictionPolicy
 {
     public static GeoRestrictionProvider ParseProvider(string? value)
     {
-        return Enum.TryParse<GeoRestrictionProvider>(value?.Trim(), ignoreCase: true, out var provider)
-            ? provider
+        return string.Equals(value?.Trim(), "LocalDb", StringComparison.OrdinalIgnoreCase)
+            ? GeoRestrictionProvider.LocalDb
             : GeoRestrictionProvider.Http;
     }
 
