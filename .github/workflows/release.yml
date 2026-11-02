@@ -84,6 +84,7 @@ jobs:
       - name: Download package
         uses: actions/download-artifact@v8
         with:
+          name: GeoRestrict.zip
           path: .
 
       - name: Verify downloaded package
