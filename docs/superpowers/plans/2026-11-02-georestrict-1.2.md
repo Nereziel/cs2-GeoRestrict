@@ -108,7 +108,7 @@
 - Produces: merged v1.2 changes and published GitHub release.
 
 - [x] **Step 1:** Open a PR from `prep/release-1.2` to `main`.
-- [x] **Step 2:** Verify the latest PR HEAD has green build/test checks.
+- [ ] **Step 2:** Verify the final PR HEAD has green build/test and package/release-validation checks.
 - [x] **Step 3:** Review the complete diff for accidental duplicate plugin/project artifacts.
 - [ ] **Step 4:** Squash merge after green verification.
 - [ ] **Step 5:** Verify the release workflow on the merge commit and confirm release `v1.2` contains exactly one `GeoRestrict.zip` asset.
