@@ -27,7 +27,7 @@ public sealed class GeoRestrict : BasePlugin
     public override string ModuleName => "GeoRestrict";
     public override string ModuleAuthor => "Nereziel";
     public override string ModuleDescription => "Allows server owners to block/whitelist players from a country based on IP.";
-    public override string ModuleVersion => "2.0.0";
+    public override string ModuleVersion => "1.2.0";
 
     public override void Load(bool hotReload)
     {
