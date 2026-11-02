@@ -9,10 +9,12 @@
 
   <ItemGroup>
     <PackageReference Include="CounterStrikeSharp.API" Version="1.0.379" />
+    <PackageReference Include="MaxMind.GeoIP2" Version="6.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\Shared\GeoRestrictionPolicy.cs" Link="GeoRestrictionPolicy.cs" />
+    <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
