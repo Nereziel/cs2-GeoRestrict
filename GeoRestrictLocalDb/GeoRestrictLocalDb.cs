@@ -21,7 +21,7 @@ public sealed class GeoRestrictLocalDb : BasePlugin
     public override string ModuleName => "GeoRestrict-LocalDB";
     public override string ModuleAuthor => "Nereziel";
     public override string ModuleDescription => "Allows server owners to block/whitelist players from a country based on IP. Requires a MaxMind GeoLite2 Country database.";
-    public override string ModuleVersion => "2.0.0";
+    public override string ModuleVersion => "1.2.0";
 
     public override void Load(bool hotReload)
     {
