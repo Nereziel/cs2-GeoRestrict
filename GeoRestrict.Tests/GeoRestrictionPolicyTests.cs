@@ -57,8 +57,8 @@ public sealed class GeoRestrictionPolicyTests
     }
 
     [Fact]
-    public void SanitizeKickMessage_RemovesCharactersThatCanBreakServerCommand()
+    public void SanitizeKickMessage_RemovesCommandSeparatorsAndControlCharacters()
     {
-        Assert.Equal("No access  now", GeoRestrictionPolicy.SanitizeKickMessage("No access \"; quit\nnow"));
+        Assert.Equal("No access  quitnow", GeoRestrictionPolicy.SanitizeKickMessage("No access \"; quit\nnow"));
     }
 }
