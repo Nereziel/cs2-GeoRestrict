@@ -4,7 +4,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Core.Translations;
 using GeoRestrict.Shared;
+using MaxMind.GeoIP2;
 using Microsoft.Extensions.Logging;
 
 namespace GeoRestrict;
@@ -23,6 +25,8 @@ public sealed class GeoRestrict : BasePlugin
     };
 
     private Config _config = new();
+    private GeoRestrictionProvider _provider = GeoRestrictionProvider.Http;
+    private DatabaseReader? _databaseReader;
 
     public override string ModuleName => "GeoRestrict";
     public override string ModuleAuthor => "Nereziel";
@@ -32,11 +36,21 @@ public sealed class GeoRestrict : BasePlugin
     public override void Load(bool hotReload)
     {
         _config = LoadConfig();
+        _provider = GeoRestrictionPolicy.ParseProvider(_config.Provider);
+
+        if (_provider == GeoRestrictionProvider.LocalDb)
+        {
+            LoadDatabase();
+        }
+
+        Logger.LogInformation("GeoRestrict using {Provider} geolocation provider", _provider);
         RegisterListener<Listeners.OnClientConnect>(OnClientConnect);
     }
 
     public override void Unload(bool hotReload)
     {
+        _databaseReader?.Dispose();
+        _databaseReader = null;
         _httpClient.Dispose();
     }
 
@@ -49,10 +63,16 @@ public sealed class GeoRestrict : BasePlugin
             return;
         }
 
-        _ = HandleClientConnectAsync(playerSlot, name, address);
+        if (_provider == GeoRestrictionProvider.LocalDb)
+        {
+            ApplyDecision(playerSlot, name, address, GetCountryCode(address));
+            return;
+        }
+
+        _ = HandleHttpLookupAsync(playerSlot, name, address);
     }
 
-    private async Task HandleClientConnectAsync(int playerSlot, string name, IPAddress address)
+    private async Task HandleHttpLookupAsync(int playerSlot, string name, IPAddress address)
     {
         string? countryCode = null;
 
@@ -70,6 +90,24 @@ public sealed class GeoRestrict : BasePlugin
         }
 
         ApplyDecision(playerSlot, name, address, countryCode);
+    }
+
+    private string? GetCountryCode(IPAddress address)
+    {
+        if (_databaseReader is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return _databaseReader.Country(address.ToString()).Country.IsoCode;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogDebug(exception, "No MaxMind country match for {IpAddress}", address);
+            return null;
+        }
     }
 
     private void ApplyDecision(int playerSlot, string name, IPAddress? expectedAddress, string? countryCode)
@@ -91,9 +129,10 @@ public sealed class GeoRestrict : BasePlugin
 
         Server.NextFrame(() =>
         {
+            var player = Utilities.GetPlayerFromSlot(playerSlot);
+
             if (expectedAddress is not null)
             {
-                var player = Utilities.GetPlayerFromSlot(playerSlot);
                 var currentAddress = GeoRestrictionPolicy.ParseIpAddress(player?.IpAddress);
 
                 if (player is null || !player.IsValid || currentAddress is null || !currentAddress.Equals(expectedAddress))
@@ -102,7 +141,9 @@ public sealed class GeoRestrict : BasePlugin
                 }
             }
 
-            var kickMessage = GeoRestrictionPolicy.SanitizeKickMessage(_config.KickMessage);
+            var kickMessage = GeoRestrictionPolicy.SanitizeKickMessage(
+                Localizer.ForPlayer(player, "kick.not_allowed"));
+
             Server.ExecuteCommand($"kickid {playerSlot} \"{kickMessage}\"");
 
             Logger.LogInformation(
@@ -110,6 +151,20 @@ public sealed class GeoRestrict : BasePlugin
                 name,
                 countryCode ?? "UNKNOWN");
         });
+    }
+
+    private void LoadDatabase()
+    {
+        var databasePath = Path.Combine(ModuleDirectory, "GeoLite2-Country.mmdb");
+        if (File.Exists(databasePath))
+        {
+            _databaseReader = new DatabaseReader(databasePath);
+            return;
+        }
+
+        Logger.LogError(
+            "LocalDb provider selected but MaxMind database was not found at {DatabasePath}",
+            databasePath);
     }
 
     private Config LoadConfig()
@@ -141,10 +196,10 @@ public sealed class GeoRestrict : BasePlugin
 
     internal sealed class Config
     {
+        public string Provider { get; set; } = "Http";
         public List<string> IsoCountries { get; set; } = ["CZ", "SK"];
         public bool Whitelist { get; set; } = true;
         public bool AllowFromUnknown { get; set; } = true;
-        public string KickMessage { get; set; } = "You are not allowed to play on this server from your country.";
     }
 
     private sealed class CountryData
