@@ -37,10 +37,10 @@
 - Produces: `GeoRestrictionProvider` enum and `GeoRestrictionPolicy.ParseProvider(string?)`.
 - Consumed by: Task 2 main plugin routing.
 
-- [ ] **Step 1:** Add tests asserting `Http`, case-insensitive `LocalDb`, null, empty and unknown values.
-- [ ] **Step 2:** Run CI/test and verify the new tests fail because provider support does not exist.
-- [ ] **Step 3:** Add `GeoRestrictionProvider` and minimal parser implementation.
-- [ ] **Step 4:** Run the full test suite and verify it passes.
+- [x] **Step 1:** Add tests asserting `Http`, case-insensitive `LocalDb`, null, empty and unknown values.
+- [x] **Step 2:** Run CI/test and verify the new tests fail because provider support does not exist.
+- [x] **Step 3:** Add `GeoRestrictionProvider` and minimal parser implementation.
+- [x] **Step 4:** Run the full test suite and verify it passes.
 
 ### Task 2: Merge HTTP and LocalDb into one plugin and localize kick text
 
@@ -57,12 +57,12 @@
 - Consumes: `GeoRestrictionPolicy.ParseProvider` from Task 1.
 - Produces: one plugin supporting both providers and native CSS localization.
 
-- [ ] **Step 1:** Add MaxMind.GeoIP2 6.1.0 and translation copy rules to the main project.
-- [ ] **Step 2:** Add `Provider` config defaulting to `Http`; remove configurable `KickMessage` from runtime behavior.
-- [ ] **Step 3:** Route LocalDb lookups through one persistent `DatabaseReader`; keep HTTP lookups asynchronous.
-- [ ] **Step 4:** Resolve `kick.not_allowed` with `Localizer.ForPlayer` when possible and server `Localizer` otherwise, then sanitize before `kickid`.
-- [ ] **Step 5:** Add the five translation JSON files.
-- [ ] **Step 6:** Build and run all tests; require zero build errors and all tests passing.
+- [x] **Step 1:** Add MaxMind.GeoIP2 6.1.0 and translation copy rules to the main project.
+- [x] **Step 2:** Add `Provider` config defaulting to `Http`; remove configurable `KickMessage` from runtime behavior.
+- [x] **Step 3:** Route LocalDb lookups through one persistent `DatabaseReader`; keep HTTP lookups asynchronous.
+- [x] **Step 4:** Resolve `kick.not_allowed` with `Localizer.ForPlayer` when possible and server `Localizer` otherwise, then sanitize before `kickid`.
+- [x] **Step 5:** Add the five translation JSON files.
+- [x] **Step 6:** Build and run all tests; require zero build errors and all tests passing.
 
 ### Task 3: Remove legacy project and update repository metadata
 
@@ -77,10 +77,10 @@
 - Consumes: single-plugin behavior from Task 2.
 - Produces: repository and documentation matching the v1.2 package layout.
 
-- [ ] **Step 1:** Remove the LocalDb project from the solution and repository.
-- [ ] **Step 2:** Remove its Dependabot entry.
-- [ ] **Step 3:** Rewrite README around one plugin, both providers, native localization and LocalDb migration.
-- [ ] **Step 4:** Build/test again to verify no stale project references remain.
+- [x] **Step 1:** Remove the LocalDb project from the solution and repository.
+- [x] **Step 2:** Remove its Dependabot entry.
+- [x] **Step 3:** Rewrite README around one plugin, both providers, native localization and LocalDb migration.
+- [x] **Step 4:** Build/test again to verify no stale project references remain.
 
 ### Task 4: Release automation
 
@@ -94,10 +94,10 @@
 - Consumes: one buildable plugin from Tasks 1-3.
 - Produces: `GeoRestrict.zip` and GitHub release `v1.2` / `release-1.2` when `VERSION` changes on `main`.
 
-- [ ] **Step 1:** Set `VERSION` to `1.2.0` and add v1.2 notes.
-- [ ] **Step 2:** Add a workflow with `contents: write` that restores, builds, tests, publishes to `package/GeoRestrict`, removes debug symbols, verifies `lang/*.json`, zips the folder, and creates the release only when the tag does not already exist.
-- [ ] **Step 3:** Ensure CI runs on pull requests and `main` without relying on the old `chore/**` branch pattern.
-- [ ] **Step 4:** Validate workflow syntax through GitHub checks.
+- [x] **Step 1:** Set `VERSION` to `1.2.0` and add v1.2 notes.
+- [x] **Step 2:** Add a workflow with `contents: write` that restores, builds, tests, publishes to `package/GeoRestrict`, removes debug symbols, verifies `lang/*.json`, zips the folder, and creates the release only when the tag does not already exist.
+- [x] **Step 3:** Ensure CI runs on pull requests and `main` without relying on the old `chore/**` branch pattern.
+- [x] **Step 4:** Validate workflow syntax and package upload/download through GitHub checks.
 
 ### Task 5: Integration and release
 
@@ -107,8 +107,8 @@
 - Consumes: Tasks 1-4.
 - Produces: merged v1.2 changes and published GitHub release.
 
-- [ ] **Step 1:** Open a PR from `prep/release-1.2` to `main`.
-- [ ] **Step 2:** Verify the latest PR HEAD has green build/test checks.
-- [ ] **Step 3:** Review the complete diff for accidental duplicate plugin/project artifacts.
+- [x] **Step 1:** Open a PR from `prep/release-1.2` to `main`.
+- [x] **Step 2:** Verify the latest PR HEAD has green build/test checks.
+- [x] **Step 3:** Review the complete diff for accidental duplicate plugin/project artifacts.
 - [ ] **Step 4:** Squash merge after green verification.
 - [ ] **Step 5:** Verify the release workflow on the merge commit and confirm release `v1.2` contains exactly one `GeoRestrict.zip` asset.
