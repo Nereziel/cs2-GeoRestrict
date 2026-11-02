@@ -1,0 +1,120 @@
+name: Release
+
+on:
+  pull_request:
+    paths:
+      - "GeoRestrict/**"
+      - "Shared/**"
+      - "GeoRestrict.Tests/**"
+      - "GeoRestrict.sln"
+      - "global.json"
+      - "VERSION"
+      - "RELEASE_NOTES.md"
+      - ".github/workflows/release.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - VERSION
+
+concurrency:
+  group: release-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore GeoRestrict.sln
+
+      - name: Build
+        run: dotnet build GeoRestrict.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test GeoRestrict.Tests/GeoRestrict.Tests.csproj --configuration Release --no-build --no-restore
+
+      - name: Publish plugin
+        run: dotnet publish GeoRestrict/GeoRestrict.csproj --configuration Release --no-restore --output package/GeoRestrict
+
+      - name: Prepare package
+        shell: bash
+        run: |
+          find package/GeoRestrict -name '*.pdb' -delete
+          rm -f package/GeoRestrict/CounterStrikeSharp.API.dll
+          rm -f package/GeoRestrict/CounterStrikeSharp.API.xml
+
+          test -f package/GeoRestrict/GeoRestrict.dll
+          test -f package/GeoRestrict/MaxMind.GeoIP2.dll
+          test -f package/GeoRestrict/lang/en.json
+          test -f package/GeoRestrict/lang/cs.json
+          test -f package/GeoRestrict/lang/sk.json
+          test -f package/GeoRestrict/lang/de.json
+          test -f package/GeoRestrict/lang/pl.json
+          test ! -e package/GeoRestrict/CounterStrikeSharp.API.dll
+          test ! -e package/GeoRestrict/GeoLite2-Country.mmdb
+
+          (cd package && zip -r ../GeoRestrict.zip GeoRestrict)
+
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          path: GeoRestrict.zip
+          archive: false
+
+  release:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download package
+        uses: actions/download-artifact@v8
+        with:
+          name: GeoRestrict.zip
+          path: .
+          skip-decompress: true
+
+      - name: Verify downloaded package
+        run: test -f GeoRestrict.zip
+
+      - name: Create GitHub release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(tr -d '\r\n ' < VERSION)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          if [ "$PATCH" = "0" ]; then
+            RELEASE_VERSION="$MAJOR.$MINOR"
+          else
+            RELEASE_VERSION="$VERSION"
+          fi
+
+          TAG="release-$RELEASE_VERSION"
+          TITLE="v$RELEASE_VERSION"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; skipping."
+            exit 0
+          fi
+
+          gh release create "$TAG" GeoRestrict.zip \
+            --target "$GITHUB_SHA" \
+            --title "$TITLE" \
+            --notes-file RELEASE_NOTES.md

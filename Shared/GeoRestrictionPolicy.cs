@@ -2,8 +2,21 @@ using System.Net;
 
 namespace GeoRestrict.Shared;
 
+public enum GeoRestrictionProvider
+{
+    Http,
+    LocalDb
+}
+
 public static class GeoRestrictionPolicy
 {
+    public static GeoRestrictionProvider ParseProvider(string? value)
+    {
+        return string.Equals(value?.Trim(), "LocalDb", StringComparison.OrdinalIgnoreCase)
+            ? GeoRestrictionProvider.LocalDb
+            : GeoRestrictionProvider.Http;
+    }
+
     public static IPAddress? ParseIpAddress(string? rawAddress)
     {
         if (string.IsNullOrWhiteSpace(rawAddress))

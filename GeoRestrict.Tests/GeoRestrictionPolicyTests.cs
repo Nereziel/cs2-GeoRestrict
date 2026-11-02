@@ -62,4 +62,20 @@ public sealed class GeoRestrictionPolicyTests
     {
         Assert.Equal("No access  quitnow", GeoRestrictionPolicy.SanitizeKickMessage("No access \"; quit\nnow"));
     }
+
+    [Theory]
+    [InlineData("Http", GeoRestrictionProvider.Http)]
+    [InlineData("http", GeoRestrictionProvider.Http)]
+    [InlineData("LocalDb", GeoRestrictionProvider.LocalDb)]
+    [InlineData("localdb", GeoRestrictionProvider.LocalDb)]
+    [InlineData(null, GeoRestrictionProvider.Http)]
+    [InlineData("", GeoRestrictionProvider.Http)]
+    [InlineData("Unknown", GeoRestrictionProvider.Http)]
+    [InlineData("1", GeoRestrictionProvider.Http)]
+    public void ParseProvider_UsesSupportedProvidersAndFallsBackToHttp(
+        string? input,
+        GeoRestrictionProvider expected)
+    {
+        Assert.Equal(expected, GeoRestrictionPolicy.ParseProvider(input));
+    }
 }

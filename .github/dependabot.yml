@@ -10,15 +10,6 @@ updates:
           - "*"
 
   - package-ecosystem: nuget
-    directory: /GeoRestrictLocalDb
-    schedule:
-      interval: weekly
-    groups:
-      nuget-dependencies:
-        patterns:
-          - "*"
-
-  - package-ecosystem: nuget
     directory: /GeoRestrict.Tests
     schedule:
       interval: weekly
