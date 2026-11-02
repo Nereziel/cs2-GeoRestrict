@@ -71,6 +71,7 @@ public sealed class GeoRestrictionPolicyTests
     [InlineData(null, GeoRestrictionProvider.Http)]
     [InlineData("", GeoRestrictionProvider.Http)]
     [InlineData("Unknown", GeoRestrictionProvider.Http)]
+    [InlineData("1", GeoRestrictionProvider.Http)]
     public void ParseProvider_UsesSupportedProvidersAndFallsBackToHttp(
         string? input,
         GeoRestrictionProvider expected)
