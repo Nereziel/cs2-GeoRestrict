@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /GeoRestrict
+    schedule:
+      interval: weekly
+    groups:
+      nuget-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: nuget
+    directory: /GeoRestrictLocalDb
+    schedule:
+      interval: weekly
+    groups:
+      nuget-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: nuget
+    directory: /GeoRestrict.Tests
+    schedule:
+      interval: weekly
+    groups:
+      test-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
