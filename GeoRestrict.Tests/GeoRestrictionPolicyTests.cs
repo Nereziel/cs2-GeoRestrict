@@ -1,4 +1,5 @@
 using GeoRestrict.Shared;
+using Xunit;
 
 namespace GeoRestrict.Tests;
 
