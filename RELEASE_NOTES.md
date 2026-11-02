@@ -7,7 +7,7 @@
 - HTTP geolocation lookups are asynchronous and no longer block the game thread.
 - LocalDb reuses one MaxMind database reader while the plugin is loaded.
 - Added native CounterStrikeSharp localization with English, Czech, Slovak, German and Polish translations.
-- Added automated tests, CI and Dependabot dependency monitoring.
+- Added automated tests, CI, release packaging and Dependabot dependency monitoring.
 
 ### Upgrade notes
 
@@ -17,4 +17,4 @@ The separate `GeoRestrictLocalDb` plugin has been removed. LocalDb users should 
 
 `KickMessage` is no longer read from the configuration file. The kick message is now provided through CounterStrikeSharp localization files under `lang/`.
 
-`GeoLite2-Country.mmdb` is not bundled with the release.
+The release contains one `GeoRestrict.zip`. `GeoLite2-Country.mmdb` and CounterStrikeSharp itself are not bundled.
