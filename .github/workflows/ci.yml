@@ -4,8 +4,11 @@ on:
   push:
     branches:
       - main
-      - "chore/**"
   pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -29,4 +32,4 @@ jobs:
         run: dotnet build GeoRestrict.sln --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test GeoRestrict.Tests/GeoRestrict.Tests.csproj --configuration Release
+        run: dotnet test GeoRestrict.Tests/GeoRestrict.Tests.csproj --configuration Release --no-build --no-restore
