@@ -61,6 +61,8 @@ jobs:
           test -f package/GeoRestrict/lang/sk.json
           test -f package/GeoRestrict/lang/de.json
           test -f package/GeoRestrict/lang/pl.json
+          test ! -e package/GeoRestrict/CounterStrikeSharp.API.dll
+          test ! -e package/GeoRestrict/GeoLite2-Country.mmdb
 
           (cd package && zip -r ../GeoRestrict.zip GeoRestrict)
 
@@ -71,7 +73,6 @@ jobs:
           archive: false
 
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: package
     runs-on: ubuntu-latest
     permissions:
@@ -85,7 +86,11 @@ jobs:
         with:
           path: .
 
+      - name: Verify downloaded package
+        run: test -f GeoRestrict.zip
+
       - name: Create GitHub release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
