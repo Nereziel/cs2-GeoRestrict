@@ -86,6 +86,7 @@ jobs:
         with:
           name: GeoRestrict.zip
           path: .
+          skip-decompress: true
 
       - name: Verify downloaded package
         run: test -f GeoRestrict.zip
